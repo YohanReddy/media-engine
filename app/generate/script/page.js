@@ -326,7 +326,7 @@ export default function ScriptPage() {
         </div>
       ))}
       <button
-        onClick={handleGenerateVisuals}
+        // onClick={handleGenerateVisuals}
         className="text-black px-4 py-2 rounded-lg float-end h-fit w-fit bg-white m-8"
       >
         Generate Visuals
