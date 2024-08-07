@@ -12,7 +12,7 @@ export default function Page() {
 
     try {
       const response = await fetch(
-        "https://media-engine-backend-95txu76jq-yohanreddys-projects.vercel.app/api/chatgpt",
+        "https://media-engine-backend.vercel.app/api/chatgpt",
         {
           method: "POST",
           headers: {

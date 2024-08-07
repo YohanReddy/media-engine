@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = `https://media-engine-backend-95txu76jq-yohanreddys-projects.vercel.app/image-generation`; // Updated FastAPI server endpoint
-const CALLBACK_URL =
-  "https://media-engine-backend-95txu76jq-yohanreddys-projects.vercel.app/webhook"; // Replace with your actual ngrok URL
+const API_URL = `https://media-engine-backend.vercel.app/image-generation`; // Updated FastAPI server endpoint
+const CALLBACK_URL = "https://media-engine-backend.vercel.app/webhook"; // Replace with your actual ngrok URL
 
 export default function ScriptPage() {
   const [content, setContent] = useState({
@@ -119,7 +118,7 @@ export default function ScriptPage() {
       for (const [key, executionId] of Object.entries(executionIds)) {
         try {
           const response = await axios.get(
-            `https://media-engine-backend-95txu76jq-yohanreddys-projects.vercel.app/latest-webhook?execution_id=${executionId}`
+            `https://media-engine-backend.vercel.app/latest-webhook?execution_id=${executionId}`
           );
           if (
             response.data &&
