@@ -11,15 +11,18 @@ export default function Page() {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8000/api/chatgpt", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: `Given the story idea, generate the following: a list of characters, each with a brief description of their appearance and role in the story; break down the story into distinct scenes, with each scene including: a scene title, a list of characters present in the scene, a detailed description of the scene setting and main events, a single detailed sentence for generating an image of the scene that includes specifics like characters, setting, mood, and any magical elements, a single detailed sentence for generating dialogue and background sound effects that includes the characters' names, their spoken lines, and any relevant background sounds, and a single detailed sentence for generating a video of the scene that describes how the scene should visually transition or animate, focusing on key elements from the text-to-image prompt. Give the output in a JSON format. Here is the Story Idea: ${inputValue}`,
-        }),
-      });
+      const response = await fetch(
+        "https://media-engine-backend-95txu76jq-yohanreddys-projects.vercel.app/api/chatgpt",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: `Given the story idea, generate the following: a list of characters, each with a brief description of their appearance and role in the story; break down the story into distinct scenes, with each scene including: a scene title, a list of characters present in the scene, a detailed description of the scene setting and main events, a single detailed sentence for generating an image of the scene that includes specifics like characters, setting, mood, and any magical elements, a single detailed sentence for generating dialogue and background sound effects that includes the characters' names, their spoken lines, and any relevant background sounds, and a single detailed sentence for generating a video of the scene that describes how the scene should visually transition or animate, focusing on key elements from the text-to-image prompt. Give the output in a JSON format. Here is the Story Idea: ${inputValue}`,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
