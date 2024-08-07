@@ -5,7 +5,7 @@ import axios from "axios";
 
 const API_URL = `http://localhost:8000/image-generation`; // Updated FastAPI server endpoint
 const CALLBACK_URL =
-  "https://68d1-2405-201-c40b-9152-ac51-bb1f-42e8-e826.ngrok-free.app/webhook"; // Replace with your actual ngrok URL
+  "https://1653-2405-201-c40b-9152-65a0-70a1-9e09-2aef.ngrok-free.app/webhook"; // Replace with your actual ngrok URL
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");

@@ -33,12 +33,20 @@ export default function Home() {
             Media Engine
           </a>
         </div>
-        <Link
-          href="/generate"
-          className="bg-black text-white px-4 py-2 rounded-md mr-4"
-        >
-          Get Started
-        </Link>
+        <div>
+          <Link
+            href="/generate"
+            className="bg-black text-white px-4 py-2 rounded-md mr-4"
+          >
+            Get Started
+          </Link>
+          <Link
+            href="/image"
+            className="bg-black text-white px-4 py-2 rounded-md mr-4"
+          >
+            Generate Image
+          </Link>
+        </div>
       </nav>
 
       <div className="w-full bg-white mt-64">

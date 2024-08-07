@@ -1,9 +1,12 @@
-// pages/script.js
-
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import axios from "axios";
+
+const API_URL = `http://localhost:8000/image-generation`; // Updated FastAPI server endpoint
+const CALLBACK_URL =
+  "https://68d1-2405-201-c40b-9152-ac51-bb1f-42e8-e826.ngrok-free.app/webhook"; // Replace with your actual ngrok URL
 
 export default function ScriptPage() {
   const [content, setContent] = useState({
@@ -14,6 +17,9 @@ export default function ScriptPage() {
   });
   const [editing, setEditing] = useState({ type: null, index: null });
   const [editValues, setEditValues] = useState({});
+  const [executionIds, setExecutionIds] = useState({});
+  const [imageUrls, setImageUrls] = useState({});
+  const [visualsGenerated, setVisualsGenerated] = useState(false); // Track if visuals are generated
 
   useEffect(() => {
     const fetchContent = () => {
@@ -55,6 +61,86 @@ export default function ScriptPage() {
     }
   };
 
+  const handleGenerateVisuals = async () => {
+    for (const [index, character] of content.characters.entries()) {
+      const payload = {
+        callback: CALLBACK_URL,
+        workflow_input: {
+          saltprompt: {
+            value: character.description,
+            value_type: "RAW",
+          },
+        },
+      };
+
+      try {
+        const response = await axios.post(API_URL, payload);
+        setExecutionIds((prev) => ({
+          ...prev,
+          [`character-${index}`]: response.data.execution_id,
+        }));
+      } catch (error) {
+        console.error(
+          "Failed to send request:",
+          error.response ? error.response.data : error.message
+        );
+      }
+    }
+
+    for (const [index, scene] of content.scenes.entries()) {
+      const payload = {
+        callback: CALLBACK_URL,
+        workflow_input: {
+          saltprompt: {
+            value: scene.image_prompt,
+            value_type: "RAW",
+          },
+        },
+      };
+
+      try {
+        const response = await axios.post(API_URL, payload);
+        setExecutionIds((prev) => ({
+          ...prev,
+          [`scene-${index}`]: response.data.execution_id,
+        }));
+      } catch (error) {
+        console.error(
+          "Failed to send request:",
+          error.response ? error.response.data : error.message
+        );
+      }
+    }
+    setVisualsGenerated(true); // Mark visuals as generated
+  };
+
+  useEffect(() => {
+    const fetchWebhookResponse = async () => {
+      for (const [key, executionId] of Object.entries(executionIds)) {
+        try {
+          const response = await axios.get(
+            `http://localhost:8000/latest-webhook?execution_id=${executionId}`
+          );
+          if (
+            response.data &&
+            response.data.Output &&
+            response.data.Output.length > 0
+          ) {
+            setImageUrls((prev) => ({
+              ...prev,
+              [key]: response.data.Output[0],
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch webhook response:", error.message);
+        }
+      }
+    };
+
+    const interval = setInterval(fetchWebhookResponse, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, [executionIds]);
+
   const renderCharacters = () => (
     <div className="my-12 pl-8">
       <h2 className="text-3xl font-bold mb-4">Characters</h2>
@@ -62,10 +148,24 @@ export default function ScriptPage() {
         {(content.characters || []).map((character, index) => (
           <div
             key={index}
-            className="relative bg-gray-100 bg-opacity-50 p-4 rounded-3xl shadow-md w-80 border-2 min-h-64 max-w-56"
+            className="relative p-4 rounded-3xl shadow-md w-80 border-2 min-h-64 max-w-56"
+            style={{
+              backgroundImage: imageUrls[`character-${index}`]
+                ? `url(${imageUrls[`character-${index}`]})`
+                : "",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           >
+            <div
+              className={`absolute inset-0 ${
+                visualsGenerated
+                  ? "bg-gradient-to-b from-transparent to-black opacity-50"
+                  : "bg-transparent"
+              }`}
+            ></div>
             <button
-              className="absolute top-2 right-2 p-1 bg-white rounded-full"
+              className="absolute top-2 right-2 p-1 bg-white rounded-full z-10"
               onClick={() => handleEditClick("characters", index)}
             >
               <img
@@ -75,7 +175,7 @@ export default function ScriptPage() {
               />
             </button>
             {editing.type === "characters" && editing.index === index ? (
-              <div>
+              <div className="relative z-10">
                 <input
                   type="text"
                   value={editValues.name}
@@ -91,8 +191,12 @@ export default function ScriptPage() {
                 />
               </div>
             ) : (
-              <div>
-                <h3 className="text-xl font-semibold mb-2">{character.name}</h3>
+              <div
+                className={`relative z-10 ${
+                  visualsGenerated ? "text-white font-bold" : ""
+                }`}
+              >
+                <h3 className="text-xl mb-2">{character.name}</h3>
                 <p>{character.description}</p>
               </div>
             )}
@@ -108,10 +212,24 @@ export default function ScriptPage() {
       {(content.scenes || []).map((scene, index) => (
         <div
           key={index}
-          className="relative bg-gray-100 bg-opacity-50 border-2 p-4 rounded-3xl shadow-md max-w-screen-xl mb-8"
+          className="relative border-2 p-4 rounded-3xl shadow-md max-w-screen-xl mb-8"
+          style={{
+            backgroundImage: imageUrls[`scene-${index}`]
+              ? `url(${imageUrls[`scene-${index}`]})`
+              : "",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
         >
+          <div
+            className={`absolute inset-0 ${
+              visualsGenerated
+                ? "bg-gradient-to-r from-transparent to-black opacity-50"
+                : "bg-transparent"
+            }`}
+          ></div>
           <button
-            className="absolute top-2 right-2 p-1 bg-white rounded-full"
+            className="absolute top-2 right-2 p-1 bg-white rounded-full z-10"
             onClick={() => handleEditClick("scenes", index)}
           >
             <img
@@ -121,7 +239,7 @@ export default function ScriptPage() {
             />
           </button>
           {editing.type === "scenes" && editing.index === index ? (
-            <div>
+            <div className="relative z-10">
               <input
                 type="text"
                 value={editValues.title}
@@ -172,8 +290,12 @@ export default function ScriptPage() {
               />
             </div>
           ) : (
-            <div>
-              <h3 className="text-2xl font-semibold mb-2">{scene.title}</h3>
+            <div
+              className={`relative z-10 ${
+                visualsGenerated ? "text-white font-bold" : ""
+              }`}
+            >
+              <h3 className="text-2xl mb-2">{scene.title}</h3>
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold">Characters Present</h4>
@@ -204,6 +326,12 @@ export default function ScriptPage() {
           )}
         </div>
       ))}
+      <button
+        onClick={handleGenerateVisuals}
+        className="text-black px-4 py-2 rounded-lg float-end h-fit w-fit bg-white m-8"
+      >
+        Generate Visuals
+      </button>
     </div>
   );
 
