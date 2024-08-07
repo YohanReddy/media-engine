@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = `http://localhost:8000/executions`; // Your FastAPI server
+const API_URL = `http://localhost:8000/image-generation`; // Updated FastAPI server endpoint
 const CALLBACK_URL =
-  "https://568c-2405-201-c40b-9152-a935-af08-55a3-d6da.ngrok-free.app/webhook"; // Replace with your actual ngrok URL
+  "https://68d1-2405-201-c40b-9152-ac51-bb1f-42e8-e826.ngrok-free.app/webhook"; // Replace with your actual ngrok URL
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
@@ -64,7 +64,7 @@ export default function Home() {
   }, [executionId]);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center text-black ">
+    <div className="min-h-screen bg-white flex flex-col items-center text-black">
       <nav className="w-full h-fit">
         <div className="p-4 flex flex-row gap-2">
           <img
@@ -77,7 +77,7 @@ export default function Home() {
           </a>
         </div>
       </nav>
-      <div className="w-full max-w-md p-8 bg-white rounded-lg">
+      <div className="w-full max-w-md p-8 bg-white rounded-lg pt-40">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label

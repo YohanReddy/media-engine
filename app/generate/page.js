@@ -11,7 +11,7 @@ export default function Page() {
     event.preventDefault();
 
     try {
-      const response = await fetch("/api/chatgpt", {
+      const response = await fetch("http://localhost:8000/api/chatgpt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,7 +61,7 @@ export default function Page() {
             <input
               type="text"
               placeholder="Enter your story"
-              className="w-full p-2 border border-gray-300 rounded-3xl min-h-14 pl-12"
+              className="w-full p-2 border-2 border-opacity-40 border-gray-500 rounded-3xl min-h-14 pl-12"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
             />

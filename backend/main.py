@@ -1,11 +1,14 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
+import os
+import logging
 
 app = FastAPI()
 
-class ExecutionPayload(BaseModel):
+class ImageGenerationPayload(BaseModel):
     callback: str
     workflow_input: dict
 
@@ -20,11 +23,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-@app.post("/executions", response_model=dict)
-async def execute_workflow(payload: ExecutionPayload):
-    import httpx
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    # Sending the request to Salt API
+@app.post("/image-generation", response_model=dict)
+async def generate_image(payload: ImageGenerationPayload):
     url = "https://salt-api-prod.getsalt.ai/api/v1/deployments/402a0423-e8d0-4eee-9022-0b12444c4400/executions/"
     headers = {
         "Content-Type": "application/json",
@@ -52,6 +56,47 @@ async def get_latest_webhook_response(execution_id: str):
     if latest_webhook_response and latest_webhook_response.get('execution_id') == execution_id:
         return latest_webhook_response
     raise HTTPException(status_code=404, detail="No data found for this execution ID")
+
+class ChatGPTRequest(BaseModel):
+    prompt: str
+
+@app.post("/api/chatgpt")
+async def chatgpt_route(request: ChatGPTRequest):
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="API key is missing")
+
+    requestBody = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": request.prompt}],
+        "temperature": 0.7,
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                json=requestBody,
+                headers=headers,
+            )
+            response.raise_for_status()
+            data = response.json()
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "No content available")
+            return JSONResponse(content={"content": content})
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(status_code=e.response.status_code, detail=f"API request failed: {e.response.text}")
+    except httpx.RequestError as e:
+        logger.error(f"Request error: {e}")
+        raise HTTPException(status_code=500, detail="Request to OpenAI API failed")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
 
 if __name__ == "__main__":
     import uvicorn
