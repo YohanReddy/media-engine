@@ -19,7 +19,7 @@ export default function Page() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            prompt: `Given the story idea, generate the following: a list of characters, each with a brief description of their appearance and role in the story; break down the story into distinct scenes, with each scene including: a scene title, a list of characters present in the scene, a detailed description of the scene setting and main events, a single detailed sentence for generating an image of the scene that includes specifics like characters, setting, mood, and any magical elements, a single detailed sentence for generating dialogue and background sound effects that includes the characters' names, their spoken lines, and any relevant background sounds, and a single detailed sentence for generating a video of the scene that describes how the scene should visually transition or animate, focusing on key elements from the text-to-image prompt. Give the output in a JSON format. Here is the Story Idea: ${inputValue}`,
+            prompt: `Given the story idea, generate the following: Break down the story into distinct scenes, with each scene including: a scene title, a detailed description of the scene setting and main events, a single detailed sentence for generating an image of the scene that includes specifics like characters and their descriptions without any names mentioned,when needed to mention about a character inside the image prompt use their detailed description everytime so that even if i generate the images individually the description would be consistent , setting, mood, and any magical elements, a single detailed sentence for generating voiceover's that include dialogue and background sound effects that includes the characters, their spoken lines, and any relevant background sounds, add filler scenes without any characters to setup the shot, focusing on key elements from the text-to-image prompt. Give the output in a JSON format. Here is the Story Idea: ${inputValue}`,
           }),
         }
       );
@@ -31,9 +31,7 @@ export default function Page() {
       }
 
       const data = await response.json();
-      // Store content in local storage
       localStorage.setItem("chatGPTContent", JSON.stringify(data));
-      // Navigate to script page
       router.push("/generate/script");
     } catch (error) {
       console.error("Error making API request:", error);

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = `https://media-engine-backend.vercel.app/image-generation`; // Updated FastAPI server endpoint
-const CALLBACK_URL = "https://media-engine-backend.vercel.app/webhook"; // Replace with your actual ngrok URL
+const API_URL = `https://media-engine-backend.vercel.app/image-generation`;
+const CALLBACK_URL = "https://media-engine-backend.vercel.app/webhook";
 
 export default function ScriptPage() {
   const [content, setContent] = useState({
@@ -14,11 +14,9 @@ export default function ScriptPage() {
     sound_effects: [],
     video_transitions: [],
   });
-  const [editing, setEditing] = useState({ type: null, index: null });
-  const [editValues, setEditValues] = useState({});
   const [executionIds, setExecutionIds] = useState({});
   const [imageUrls, setImageUrls] = useState({});
-  const [visualsGenerated, setVisualsGenerated] = useState(false); // Track if visuals are generated
+  const [visualsGenerated, setVisualsGenerated] = useState(false);
 
   useEffect(() => {
     const fetchContent = () => {
@@ -40,25 +38,6 @@ export default function ScriptPage() {
 
     fetchContent();
   }, []);
-
-  const handleEditClick = (type, index) => {
-    setEditing({ type, index });
-    const item = content[type][index];
-    setEditValues({ ...item });
-  };
-
-  const handleChange = (field, value) => {
-    setEditValues((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = () => {
-    if (editing.type !== null && editing.index !== null) {
-      const updatedContent = { ...content };
-      updatedContent[editing.type][editing.index] = editValues;
-      setContent(updatedContent);
-      setEditing({ type: null, index: null });
-    }
-  };
 
   const handleGenerateVisuals = async () => {
     for (const [index, character] of content.characters.entries()) {
@@ -110,7 +89,7 @@ export default function ScriptPage() {
         );
       }
     }
-    setVisualsGenerated(true); // Mark visuals as generated
+    setVisualsGenerated(true);
   };
 
   useEffect(() => {
@@ -136,7 +115,7 @@ export default function ScriptPage() {
       }
     };
 
-    const interval = setInterval(fetchWebhookResponse, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchWebhookResponse, 5000);
     return () => clearInterval(interval);
   }, [executionIds]);
 
@@ -163,42 +142,14 @@ export default function ScriptPage() {
                   : "bg-transparent"
               }`}
             ></div>
-            <button
-              className="absolute top-2 right-2 p-1 bg-white rounded-full z-10"
-              onClick={() => handleEditClick("characters", index)}
+            <div
+              className={`relative z-10 ${
+                visualsGenerated ? "text-white font-bold" : ""
+              }`}
             >
-              <img
-                src="https://img.icons8.com/?size=24&id=43809&format=png"
-                alt="Edit"
-                className="w-5 h-5"
-              />
-            </button>
-            {editing.type === "characters" && editing.index === index ? (
-              <div className="relative z-10">
-                <input
-                  type="text"
-                  value={editValues.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  onBlur={handleSave}
-                  className="border p-1 rounded w-full mb-2"
-                />
-                <textarea
-                  value={editValues.description}
-                  onChange={(e) => handleChange("description", e.target.value)}
-                  onBlur={handleSave}
-                  className="border p-1 rounded w-full"
-                />
-              </div>
-            ) : (
-              <div
-                className={`relative z-10 ${
-                  visualsGenerated ? "text-white font-bold" : ""
-                }`}
-              >
-                <h3 className="text-xl mb-2">{character.name}</h3>
-                <p>{character.description}</p>
-              </div>
-            )}
+              <h3 className="text-xl mb-2">{character.name}</h3>
+              <p>{character.description}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -227,102 +178,39 @@ export default function ScriptPage() {
                 : "bg-transparent"
             }`}
           ></div>
-          <button
-            className="absolute top-2 right-2 p-1 bg-white rounded-full z-10"
-            onClick={() => handleEditClick("scenes", index)}
+          <div
+            className={`relative z-10 ${
+              visualsGenerated ? "text-white font-bold" : ""
+            }`}
           >
-            <img
-              src="https://img.icons8.com/?size=24&id=43809&format=png"
-              alt="Edit"
-              className="w-5 h-5"
-            />
-          </button>
-          {editing.type === "scenes" && editing.index === index ? (
-            <div className="relative z-10">
-              <input
-                type="text"
-                value={editValues.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                onBlur={handleSave}
-                className="border p-1 rounded w-full mb-2"
-              />
-              <h4 className="font-semibold">Characters Present</h4>
-              <textarea
-                value={editValues.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                onBlur={handleSave}
-                className="border p-1 rounded w-full mb-2"
-              />
-              <h4 className="font-semibold">Scene Setting</h4>
-              <input
-                type="text"
-                value={editValues.setting}
-                onChange={(e) => handleChange("setting", e.target.value)}
-                onBlur={handleSave}
-                className="border p-1 rounded w-full mb-2"
-              />
-              <h4 className="font-semibold">Image Prompt</h4>
-              <input
-                type="text"
-                value={editValues.image_prompt}
-                onChange={(e) => handleChange("image_prompt", e.target.value)}
-                onBlur={handleSave}
-                className="border p-1 rounded w-full mb-2"
-              />
-              <h4 className="font-semibold">Dialogue & Sound Effects</h4>
-              <input
-                type="text"
-                value={editValues.dialogue_prompt}
-                onChange={(e) =>
-                  handleChange("dialogue_prompt", e.target.value)
-                }
-                onBlur={handleSave}
-                className="border p-1 rounded w-full mb-2"
-              />
-              <h4 className="font-semibold">Video Transition</h4>
-              <input
-                type="text"
-                value={editValues.video_prompt}
-                onChange={(e) => handleChange("video_prompt", e.target.value)}
-                onBlur={handleSave}
-                className="border p-1 rounded w-full"
-              />
-            </div>
-          ) : (
-            <div
-              className={`relative z-10 ${
-                visualsGenerated ? "text-white font-bold" : ""
-              }`}
-            >
-              <h3 className="text-2xl mb-2">{scene.title}</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold">Characters Present</h4>
-                  <ul className="list-disc pl-5">
-                    {(scene.characters || []).map((char, idx) => (
-                      <li key={idx}>{char}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Scene Setting</h4>
-                  <p>{scene.setting || "Not specified"}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Image Prompt</h4>
-                  <p>{scene.image_prompt || "Not specified"}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Dialogue & Sound Effects</h4>
-                  <p>{scene.dialogue_prompt || "Not specified"}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Video Transition</h4>
-                  <p>{scene.video_prompt || "Not specified"}</p>
-                </div>
+            <h3 className="text-2xl mb-2">{scene.title}</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold">Characters Present</h4>
+                <ul className="list-disc pl-5">
+                  {(scene.characters || []).map((char, idx) => (
+                    <li key={idx}>{char}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold">Scene Setting</h4>
+                <p>{scene.setting || "Not specified"}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Image Prompt</h4>
+                <p>{scene.image_prompt || "Not specified"}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Dialogue & Sound Effects</h4>
+                <p>{scene.dialogue_prompt || "Not specified"}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Video Transition</h4>
+                <p>{scene.video_prompt || "Not specified"}</p>
               </div>
             </div>
-          )}
+          </div>
         </div>
       ))}
       <button

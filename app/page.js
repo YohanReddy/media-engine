@@ -14,8 +14,8 @@ export default function Home() {
       setTimeout(() => {
         setIndex((prevIndex) => (prevIndex + 1) % words.length);
         setFade(true);
-      }, 250); // Duration of the fade-out animation
-    }, 1500); // Update interval in milliseconds
+      }, 250);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, []);
