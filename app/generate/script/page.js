@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { supabase } from "@/app/lib/supabaseClient";
 
 const IMAGE_URL = `https://media-engine-backend.vercel.app/image-generation`;
 const VIDEO_URL = `https://media-engine-backend.vercel.app/video-generation`;
@@ -16,6 +17,7 @@ export default function ScriptPage() {
   });
   const [executionIds, setExecutionIds] = useState({});
   const [imageUrls, setImageUrls] = useState({});
+  const [videoUrls, setVideoUrls] = useState({});
   const [visualsGenerated, setVisualsGenerated] = useState(false);
   const [videosGenerated, setVideosGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -43,6 +45,7 @@ export default function ScriptPage() {
 
   const handleGenerateVisuals = async () => {
     setLoading(true);
+    const newExecutionIds = {};
     for (const [index, scene] of content.scenes.entries()) {
       const payload = {
         callback: CALLBACK_URL,
@@ -56,10 +59,7 @@ export default function ScriptPage() {
 
       try {
         const response = await axios.post(IMAGE_URL, payload);
-        setExecutionIds((prev) => ({
-          ...prev,
-          [`scene-${index}`]: response.data.execution_id,
-        }));
+        newExecutionIds[`scene-${index}`] = response.data.execution_id;
       } catch (error) {
         console.error(
           "Failed to send request:",
@@ -67,11 +67,13 @@ export default function ScriptPage() {
         );
       }
     }
+    setExecutionIds(newExecutionIds);
     setVisualsGenerated(true);
   };
 
   const handleGenerateVideos = async () => {
     setLoading(true);
+    const newVideoExecutionIds = {};
     for (const [index, imageUrl] of Object.entries(imageUrls)) {
       const payload = {
         callback: CALLBACK_URL,
@@ -85,10 +87,7 @@ export default function ScriptPage() {
 
       try {
         const response = await axios.post(VIDEO_URL, payload);
-        setExecutionIds((prev) => ({
-          ...prev,
-          [`scene-${index}`]: response.data.execution_id,
-        }));
+        newVideoExecutionIds[`scene-${index}`] = response.data.execution_id;
       } catch (error) {
         console.error(
           "Failed to send request:",
@@ -96,6 +95,7 @@ export default function ScriptPage() {
         );
       }
     }
+    setExecutionIds((prev) => ({ ...prev, ...newVideoExecutionIds }));
     setVideosGenerated(true);
   };
 
@@ -106,32 +106,55 @@ export default function ScriptPage() {
           const response = await axios.get(
             `https://media-engine-backend.vercel.app/latest-webhook?execution_id=${executionId}`
           );
+          console.log("Webhook response:", response.data); // Debugging log
           if (
             response.data &&
             response.data.Output &&
             response.data.Output.length > 0
           ) {
-            setImageUrls((prev) => ({
-              ...prev,
-              [key]: response.data.Output[0],
-            }));
+            const outputUrl = response.data.Output[0];
+            if (key.startsWith("scene-")) {
+              setImageUrls((prev) => ({
+                ...prev,
+                [key]: outputUrl,
+              }));
+              // Save image URL to Supabase
+              await supabase.from("images").upsert({ id: key, url: outputUrl });
+            } else {
+              setVideoUrls((prev) => ({
+                ...prev,
+                [key]: outputUrl,
+              }));
+              // Save video URL to Supabase
+              await supabase.from("videos").upsert({ id: key, url: outputUrl });
+            }
+            // Remove the executionId from the state to stop polling
+            setExecutionIds((prev) => {
+              const { [key]: _, ...remaining } = prev;
+              return remaining;
+            });
           }
         } catch (error) {
           console.error("Failed to fetch webhook response:", error.message);
         }
       }
 
-      // Check if all images are loaded
-      const allLoaded =
-        Object.keys(executionIds).length === Object.keys(imageUrls).length;
-      if (allLoaded) {
+      // Check if all images and videos are loaded
+      const allImagesLoaded =
+        Object.keys(executionIds).filter((key) => key.startsWith("scene-"))
+          .length === Object.keys(imageUrls).length;
+      const allVideosLoaded =
+        Object.keys(executionIds).filter((key) => !key.startsWith("scene-"))
+          .length === Object.keys(videoUrls).length;
+
+      if (allImagesLoaded && allVideosLoaded) {
         setLoading(false);
       }
     };
 
     const interval = setInterval(fetchWebhookResponse, 5000);
     return () => clearInterval(interval);
-  }, [executionIds, imageUrls]);
+  }, [executionIds, imageUrls, videoUrls]);
 
   const renderScenes = () => (
     <div className="my-12 pl-8">

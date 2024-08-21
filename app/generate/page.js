@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { supabase } from "../lib/supabaseClient"; // Import supabase client
 
 export default function Page() {
   const [inputValue, setInputValue] = useState("");
@@ -11,6 +12,7 @@ export default function Page() {
     event.preventDefault();
 
     try {
+      // Make the API request to ChatGPT
       const response = await fetch(
         "https://media-engine-backend.vercel.app/api/chatgpt",
         {
@@ -31,6 +33,20 @@ export default function Page() {
       }
 
       const data = await response.json();
+
+      // Save response to Supabase
+      const { error } = await supabase.from("stories").insert([
+        {
+          prompt: inputValue,
+          chatgpt_response: data,
+        },
+      ]);
+
+      if (error) {
+        console.error("Error saving data to Supabase:", error);
+      }
+
+      // Optionally save to localStorage or navigate to another page
       localStorage.setItem("chatGPTContent", JSON.stringify(data));
       router.push("/generate/script");
     } catch (error) {
